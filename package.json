@@ -1,0 +1,26 @@
+{
+  "name": "fr.liris.protoburst",
+  "version": "1.0.0",
+  "displayName": "ProtoBurst",
+  "description": "Protocol Buffers library compatible with the Unity Burst compiler",
+  "unity": "2022.3",
+  "unityRelease": "2f1",
+  "documentationUrl": "",
+  "changelogUrl": "",
+  "licensesUrl": "",
+  "dependencies": {
+    "com.unity.test-framework": "2.0.1-pre.18",
+    "com.unity.burst": "1.8.4",
+    "com.unity.collections": "2.1.4"
+  },
+  "keywords": [
+    "ProtoBuf",
+    "Serialization",
+    "Burst"
+  ],
+  "author": {
+    "name": "Charles JAVERLIAT",
+    "email": "charles.javerliat@liris.cnrs.fr",
+    "url": "https://liris.cnrs.fr/page-membre/charles-javerliat"
+  }
+}
