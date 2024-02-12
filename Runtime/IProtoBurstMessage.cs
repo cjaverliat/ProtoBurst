@@ -6,6 +6,6 @@ namespace ProtoBurst
     {
         public void WriteTo(ref NativeList<byte> data);
 
-        public FixedString512Bytes TypeUrl { get; }
+        public FixedString128Bytes TypeUrl { get; }
     }
 }

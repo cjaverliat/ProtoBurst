@@ -6,7 +6,7 @@ namespace ProtoBurst.Message
     [BurstCompile]
     public readonly struct Guid : IProtoBurstMessage
     {
-        private static readonly FixedString512Bytes GuidTypeUrl = "fr.liris.plume/fr.liris.Guid";
+        private static readonly FixedString128Bytes GuidTypeUrl = "fr.liris.plume/fr.liris.Guid";
 
         private readonly uint _x;
         private readonly uint _y;
@@ -33,6 +33,6 @@ namespace ProtoBurst.Message
             WritingPrimitives.WriteUInt32(_w, ref data);
         }
 
-        public FixedString512Bytes TypeUrl => GuidTypeUrl;
+        public FixedString128Bytes TypeUrl => GuidTypeUrl;
     }
 }

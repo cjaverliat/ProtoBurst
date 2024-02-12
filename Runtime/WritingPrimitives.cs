@@ -19,28 +19,28 @@ namespace ProtoBurst
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteRawByte(byte value, ref NativeList<byte> data)
+        public static void WriteRawByte(byte value, ref NativeList<byte> data)
         {
             data.Add(value);
         }
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteRawBytes(ref NativeArray<byte> bytes, ref NativeList<byte> data)
+        public static void WriteRawBytes(ref NativeArray<byte> bytes, ref NativeList<byte> data)
         {
             data.AddRange(bytes);
         }
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteRawTag(byte tag, ref NativeList<byte> data)
+        public static void WriteRawTag(byte tag, ref NativeList<byte> data)
         {
             WriteRawByte(tag, ref data);
         }
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteRawLittleEndian32(uint value, ref NativeList<byte> data)
+        public static void WriteRawLittleEndian32(uint value, ref NativeList<byte> data)
         {
             var bytes = new NativeArray<byte>(4, Allocator.Temp);
             bytes[0] = (byte)value;
@@ -53,7 +53,7 @@ namespace ProtoBurst
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteRawLittleEndian64(ulong value, ref NativeList<byte> data)
+        public static void WriteRawLittleEndian64(ulong value, ref NativeList<byte> data)
         {
             var bytes = new NativeArray<byte>(8, Allocator.Temp);
             bytes[0] = (byte)value;
@@ -70,7 +70,7 @@ namespace ProtoBurst
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteRawVarInt32(uint value, ref NativeList<byte> data)
+        public static void WriteRawVarInt32(uint value, ref NativeList<byte> data)
         {
             if (value < 128U)
             {
@@ -96,7 +96,7 @@ namespace ProtoBurst
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteRawVarInt64(ulong value, ref NativeList<byte> data)
+        public static void WriteRawVarInt64(ulong value, ref NativeList<byte> data)
         {
             if (value < 128UL)
             {
@@ -296,7 +296,7 @@ namespace ProtoBurst
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteMessage<T>(T message, ref NativeList<byte> data) where T : struct, IProtoBurstMessage
+        public static void WriteMessage<T>(ref T message, ref NativeList<byte> data) where T : IProtoBurstMessage
         {
             var tmp = new NativeList<byte>(Allocator.TempJob);
             message.WriteTo(ref tmp);
