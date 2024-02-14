@@ -20,10 +20,10 @@ namespace ProtoBurst.Message
             _msgTypeUrl = msgTypeUrl;
         }
 
-        public static Any Pack<T>(Allocator allocator, T msg) where T : struct, IProtoBurstMessage
+        public static Any Pack<T>(Allocator allocator, T msg) where T : unmanaged, IProtoBurstMessage
         {
             var msgBytes = new NativeList<byte>(allocator);
-            WritingPrimitives.WriteMessage(ref msg, ref msgBytes);
+            msg.WriteTo(ref msgBytes);
             return new Any(msgBytes.AsArray(), msg.TypeUrl);
         }
         
@@ -43,7 +43,7 @@ namespace ProtoBurst.Message
 
             WritingPrimitives.WriteTag(Google.Protobuf.WellKnownTypes.Any.ValueFieldNumber,
                 WireFormat.WireType.LengthDelimited, ref data);
-            WritingPrimitives.WriteRawBytes(ref _msgBytes, ref data);
+            WritingPrimitives.WriteBytes(ref _msgBytes, ref data);
         }
 
         public void Dispose()

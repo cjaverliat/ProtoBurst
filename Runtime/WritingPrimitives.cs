@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Unity.Burst;
@@ -7,6 +6,7 @@ using Unity.Collections;
 
 namespace ProtoBurst
 {
+    // TODO: implement Insertion methods for all the Write methods + removed any native allocations
     [BurstCompile]
     public static class WritingPrimitives
     {
@@ -67,14 +67,15 @@ namespace ProtoBurst
             WriteRawBytes(ref bytes, ref data);
             bytes.Dispose();
         }
-
+        
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteRawVarInt32(uint value, ref NativeList<byte> data)
+        public static void InsertRawVarInt32(uint value, ref NativeList<byte> data, int index)
         {
             if (value < 128U)
             {
-                data.Add((byte)value);
+                data.InsertRange(index, 1);
+                data[index] = (byte)value;
             }
             else
             {
@@ -82,16 +83,26 @@ namespace ProtoBurst
                 {
                     if (value > (uint)sbyte.MaxValue)
                     {
-                        data.Add((byte)(value & sbyte.MaxValue | 128));
+                        data.InsertRange(index, 1);
+                        data[index++] = (byte)(value & sbyte.MaxValue | 128);
                         value >>= 7;
                     }
                     else
                     {
-                        data.Add((byte)value);
+                        data.InsertRange(index, 1);
+                        data[index] = (byte)value;
                         return;
                     }
                 }
             }
+        }
+        
+        
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteRawVarInt32(uint value, ref NativeList<byte> data)
+        {
+            InsertRawVarInt32(value, ref data, data.Length);
         }
 
         [BurstCompile]
@@ -293,16 +304,24 @@ namespace ProtoBurst
         {
             WriteRawVarInt32((uint)length, ref data);
         }
+        
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void InsertLength(int length, ref NativeList<byte> data, int index)
+        {
+            InsertRawVarInt32((uint)length, ref data, index);
+        }
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteMessage<T>(ref T message, ref NativeList<byte> data) where T : IProtoBurstMessage
         {
-            var tmp = new NativeList<byte>(Allocator.TempJob);
-            message.WriteTo(ref tmp);
-            WriteLength(tmp.Length, ref data);
-            data.AddRange(tmp.AsArray());
-            tmp.Dispose();
+            var prevLength = data.Length;
+            message.WriteTo(ref data);
+            var newLength = data.Length;
+            var length = newLength - prevLength;
+            var index = prevLength;
+            InsertLength(length, ref data, index);
         }
 
         [BurstCompile]
