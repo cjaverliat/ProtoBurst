@@ -29,10 +29,7 @@ namespace ProtoBurst
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteRawBytesNoResize(ref NativeArray<byte> bytes, ref NativeList<byte> data)
         {
-            unsafe
-            {
-                data.AddRangeNoResize(bytes.GetUnsafePtr(), bytes.Length);
-            }
+            data.AddRangeNoResize(bytes);
         }
 
         [BurstCompile]
@@ -149,7 +146,7 @@ namespace ProtoBurst
 
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteTag(byte tag, ref NativeList<byte> data)
+        public static void WriteTagNoResize(byte tag, ref NativeList<byte> data)
         {
             WriteRawByteNoResize(tag, ref data);
         }
