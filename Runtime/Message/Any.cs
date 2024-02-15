@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 
@@ -8,7 +9,7 @@ namespace ProtoBurst.Message
     public struct Any : IProtoBurstMessage, IDisposable
     {
         private static readonly FixedString128Bytes AnyTypeUrl = "type.googleapis.com/google.protobuf.Any";
-        
+
         public FixedString128Bytes TypeUrl => AnyTypeUrl;
 
         private NativeArray<byte> _msgBytes;
@@ -22,28 +23,39 @@ namespace ProtoBurst.Message
 
         public static Any Pack<T>(Allocator allocator, T msg) where T : unmanaged, IProtoBurstMessage
         {
-            var msgBytes = new NativeList<byte>(allocator);
-            msg.WriteTo(ref msgBytes);
+            var msgBytes = new NativeList<byte>(msg.ComputeMaxSize(), allocator);
+            msg.WriteToNoResize(ref msgBytes);
             return new Any(msgBytes.AsArray(), msg.TypeUrl);
         }
-        
-        public static Any Pack(NativeArray<byte> msgBytes, FixedString128Bytes msgTypeUrl) 
+
+        public static Any Pack(NativeArray<byte> msgBytes, FixedString128Bytes msgTypeUrl)
         {
             return new Any(msgBytes, msgTypeUrl);
         }
 
-        public void WriteTo(ref NativeList<byte> data)
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int ComputeMaxSize()
+        {
+            var msgTypeUrl = WritingPrimitives.TagSize + WritingPrimitives.LengthPrefixMaxSize + _msgTypeUrl.Length;
+            var msgBytes = WritingPrimitives.TagSize + WritingPrimitives.LengthPrefixMaxSize + _msgBytes.Length;
+            return msgTypeUrl + msgBytes;
+        }
+
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteToNoResize(ref NativeList<byte> data)
         {
             if (_msgTypeUrl.Length != 0)
             {
-                WritingPrimitives.WriteTag(Google.Protobuf.WellKnownTypes.Any.TypeUrlFieldNumber,
+                WritingPrimitives.WriteTagNoResize(Google.Protobuf.WellKnownTypes.Any.TypeUrlFieldNumber,
                     WireFormat.WireType.LengthDelimited, ref data);
-                WritingPrimitives.WriteFixedString128Bytes(ref _msgTypeUrl, ref data);
+                WritingPrimitives.WriteLengthPrefixedFixedStringNoResize(ref _msgTypeUrl, ref data);
             }
 
-            WritingPrimitives.WriteTag(Google.Protobuf.WellKnownTypes.Any.ValueFieldNumber,
+            WritingPrimitives.WriteTagNoResize(Google.Protobuf.WellKnownTypes.Any.ValueFieldNumber,
                 WireFormat.WireType.LengthDelimited, ref data);
-            WritingPrimitives.WriteBytes(ref _msgBytes, ref data);
+            WritingPrimitives.WriteLengthPrefixedBytesNoResize(ref _msgBytes, ref data);
         }
 
         public void Dispose()

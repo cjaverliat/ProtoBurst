@@ -1,4 +1,5 @@
-﻿using Unity.Burst;
+﻿using System.Runtime.CompilerServices;
+using Unity.Burst;
 using Unity.Collections;
 
 namespace ProtoBurst.Message
@@ -20,17 +21,26 @@ namespace ProtoBurst.Message
             _z = z;
             _w = w;
         }
-        
-        public void WriteTo(ref NativeList<byte> data)
+
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int ComputeMaxSize()
         {
-            WritingPrimitives.WriteTag(1, WireFormat.WireType.VarInt, ref data);
-            WritingPrimitives.WriteUInt32(_x, ref data);
-            WritingPrimitives.WriteTag(2, WireFormat.WireType.VarInt, ref data);
-            WritingPrimitives.WriteUInt32(_y, ref data);
-            WritingPrimitives.WriteTag(3, WireFormat.WireType.VarInt, ref data);
-            WritingPrimitives.WriteUInt32(_z, ref data);
-            WritingPrimitives.WriteTag(4, WireFormat.WireType.VarInt, ref data);
-            WritingPrimitives.WriteUInt32(_w, ref data);
+            return WritingPrimitives.TagSize * 4 + WritingPrimitives.VarInt32MaxSize * 4;
+        }
+
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteToNoResize(ref NativeList<byte> data)
+        {
+            WritingPrimitives.WriteTagNoResize(1, WireFormat.WireType.VarInt, ref data);
+            WritingPrimitives.WriteUInt32NoResize(_x, ref data);
+            WritingPrimitives.WriteTagNoResize(2, WireFormat.WireType.VarInt, ref data);
+            WritingPrimitives.WriteUInt32NoResize(_y, ref data);
+            WritingPrimitives.WriteTagNoResize(3, WireFormat.WireType.VarInt, ref data);
+            WritingPrimitives.WriteUInt32NoResize(_z, ref data);
+            WritingPrimitives.WriteTagNoResize(4, WireFormat.WireType.VarInt, ref data);
+            WritingPrimitives.WriteUInt32NoResize(_w, ref data);
         }
 
         public FixedString128Bytes TypeUrl => GuidTypeUrl;
