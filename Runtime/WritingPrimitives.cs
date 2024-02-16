@@ -11,6 +11,8 @@ namespace ProtoBurst
     {
         public const int VarInt32MaxSize = 4;
         public const int VarInt64MaxSize = 8;
+        public const int Int32MaxSize = VarInt32MaxSize;
+        public const int Int64MaxSize = VarInt64MaxSize;
         public const int LengthPrefixMaxSize = VarInt32MaxSize;
         public const int Fixed32Size = 4;
         public const int Fixed64Size = 8;

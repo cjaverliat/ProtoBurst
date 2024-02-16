@@ -15,7 +15,7 @@ namespace ProtoBurst.Message
         private NativeArray<byte> _msgBytes;
         private FixedString128Bytes _msgTypeUrl;
 
-        private Any(NativeArray<byte> msgBytes, FixedString128Bytes msgTypeUrl)
+        public Any(NativeArray<byte> msgBytes, FixedString128Bytes msgTypeUrl)
         {
             _msgBytes = msgBytes;
             _msgTypeUrl = msgTypeUrl;
@@ -23,14 +23,11 @@ namespace ProtoBurst.Message
 
         public static Any Pack<T>(Allocator allocator, T msg) where T : unmanaged, IProtoBurstMessage
         {
-            var msgBytes = new NativeList<byte>(msg.ComputeMaxSize(), allocator);
-            msg.WriteToNoResize(ref msgBytes);
-            return new Any(msgBytes.AsArray(), msg.TypeUrl);
-        }
-
-        public static Any Pack(NativeArray<byte> msgBytes, FixedString128Bytes msgTypeUrl)
-        {
-            return new Any(msgBytes, msgTypeUrl);
+            var tmpMsgBytes = new NativeList<byte>(msg.ComputeMaxSize(), Allocator.TempJob);
+            msg.WriteToNoResize(ref tmpMsgBytes);
+            var msgBytes = tmpMsgBytes.ToArray(allocator);
+            tmpMsgBytes.Dispose();
+            return new Any(msgBytes, msg.TypeUrl);
         }
 
         [BurstCompile]
