@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using Google.Protobuf;
 using Unity.Burst;
 using Unity.Collections;
 
@@ -8,26 +9,38 @@ namespace ProtoBurst.Message
     [BurstCompile]
     public struct Any : IProtoBurstMessage, IDisposable
     {
-        private static readonly FixedString128Bytes AnyTypeUrl = "type.googleapis.com/google.protobuf.Any";
+        private static readonly FixedString128Bytes AnyTypeUrl = "type.googleapis.com/" + Google.Protobuf.WellKnownTypes.Any.Descriptor.FullName;
 
         public FixedString128Bytes TypeUrl => AnyTypeUrl;
 
         private NativeArray<byte> _msgBytes;
         private FixedString128Bytes _msgTypeUrl;
 
-        public Any(NativeArray<byte> msgBytes, FixedString128Bytes msgTypeUrl)
+        private Any(NativeArray<byte> msgBytes, FixedString128Bytes msgTypeUrl)
         {
             _msgBytes = msgBytes;
             _msgTypeUrl = msgTypeUrl;
         }
 
-        public static Any Pack<T>(Allocator allocator, T msg) where T : unmanaged, IProtoBurstMessage
+        public static Any Pack<T>(T msg, Allocator allocator) where T : unmanaged, IProtoBurstMessage
         {
             var tmpMsgBytes = new NativeList<byte>(msg.ComputeMaxSize(), Allocator.TempJob);
             msg.WriteToNoResize(ref tmpMsgBytes);
             var msgBytes = tmpMsgBytes.ToArray(allocator);
             tmpMsgBytes.Dispose();
             return new Any(msgBytes, msg.TypeUrl);
+        }
+        
+        public static Any PackManaged<T>(T msg, Allocator allocator) where T : IMessage
+        {
+            var bytes = new NativeArray<byte>(msg.ToByteArray(), allocator);
+            var typeUrl = new FixedString128Bytes(msg.Descriptor.FullName);
+            return new Any(bytes, typeUrl);
+        }
+
+        public static Any Pack(NativeArray<byte> msgBytes, FixedString128Bytes msgTypeUrl)
+        {
+            return new Any(msgBytes, msgTypeUrl);
         }
 
         [BurstCompile]
