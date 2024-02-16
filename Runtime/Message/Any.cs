@@ -24,7 +24,7 @@ namespace ProtoBurst.Message
 
         public static Any Pack<T>(T msg, Allocator allocator) where T : unmanaged, IProtoBurstMessage
         {
-            var tmpMsgBytes = new NativeList<byte>(msg.ComputeMaxSize(), Allocator.TempJob);
+            var tmpMsgBytes = new NativeList<byte>(msg.ComputeMaxSize(), Allocator.Persistent);
             msg.WriteToNoResize(ref tmpMsgBytes);
             var msgBytes = tmpMsgBytes.ToArray(allocator);
             tmpMsgBytes.Dispose();
