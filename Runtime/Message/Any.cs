@@ -31,13 +31,21 @@ namespace ProtoBurst.Message
             return new Any(msgBytes, msg.TypeUrl);
         }
         
-        public static Any PackManaged<T>(T msg, Allocator allocator) where T : IMessage
+        [BurstDiscard]
+        public static Any Pack(IMessage msg, Allocator allocator)
         {
             var bytes = new NativeArray<byte>(msg.ToByteArray(), allocator);
             var typeUrl = new FixedString128Bytes(msg.Descriptor.FullName);
             return new Any(bytes, typeUrl);
         }
 
+        public static Any Pack(ReadOnlySpan<byte> msgBytes, FixedString128Bytes msgTypeUrl, Allocator allocator)
+        {
+            var bytes = new NativeArray<byte>(msgBytes.Length, allocator);
+            msgBytes.CopyTo(bytes);
+            return new Any(bytes, msgTypeUrl);
+        }
+        
         public static Any Pack(NativeArray<byte> msgBytes, FixedString128Bytes msgTypeUrl)
         {
             return new Any(msgBytes, msgTypeUrl);
