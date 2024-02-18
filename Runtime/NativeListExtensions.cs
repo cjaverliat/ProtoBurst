@@ -19,6 +19,14 @@ namespace ProtoBurst
         
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Insert<T>(this NativeList<T> list, int index, T value) where T : unmanaged
+        {
+            list.InsertRange(index, 1);
+            list[index] = value;
+        }
+        
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void AddRangeNoResize<T>(this NativeList<T> list, NativeArray<T> values) where T : unmanaged
         {
             list.CheckNoResizeHasEnoughCapacity(list.Length + values.Length);

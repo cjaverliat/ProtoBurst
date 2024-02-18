@@ -1,28 +1,30 @@
+using System.Runtime.CompilerServices;
+using Unity.Burst;
 using Unity.Collections;
 
 namespace ProtoBurst
 {
+    [BurstCompile]
     public static class ProtoBurstMessageExtensions
     {
-        public static NativeArray<byte> SerializeLengthPrefixed<T>(this T message, Allocator allocator)
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static NativeList<byte> SerializeLengthPrefixed<T>(this T message, Allocator allocator)
             where T : IProtoBurstMessage
         {
-            var bytes = new NativeList<byte>(message.ComputeMaxSize() + WritingPrimitives.LengthPrefixMaxSize,
-                Allocator.Persistent);
-            WritingPrimitives.WriteLengthPrefixedMessageNoResize(ref message, ref bytes);
-            var result = bytes.ToArray(allocator);
-            bytes.Dispose();
-            return result;
+            var bytes = new NativeList<byte>(allocator);
+            WritingPrimitives.WriteLengthPrefixedMessage(ref message, ref bytes);
+            return bytes;
         }
 
-        public static NativeArray<byte> Serialize<T>(this T message, Allocator allocator)
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static NativeList<byte> Serialize<T>(this T message, Allocator allocator)
             where T : IProtoBurstMessage
         {
-            var bytes = new NativeList<byte>(message.ComputeMaxSize(), Allocator.Persistent);
-            message.WriteToNoResize(ref bytes);
-            var result = bytes.ToArray(allocator);
-            bytes.Dispose();
-            return result;
+            var bytes = new NativeList<byte>(allocator);
+            message.WriteTo(ref bytes);
+            return bytes;
         }
     }
 }

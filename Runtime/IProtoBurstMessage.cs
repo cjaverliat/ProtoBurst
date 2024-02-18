@@ -1,4 +1,5 @@
-﻿using Unity.Collections;
+﻿using ProtoBurst.Packages.ProtoBurst.Runtime;
+using Unity.Collections;
 
 namespace ProtoBurst
 {
@@ -6,8 +7,10 @@ namespace ProtoBurst
     {
         public int ComputeMaxSize();
 
-        public void WriteToNoResize(ref NativeList<byte> data); 
+        public void WriteToNoResize(ref NativeList<byte> data);
         
-        public FixedString128Bytes TypeUrl { get; }
+        public void WriteTo(ref NativeList<byte> data);
+        
+        public SampleTypeUrl TypeUrl { get; }
     }
 }
