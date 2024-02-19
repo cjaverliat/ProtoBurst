@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using ProtoBurst.Packages.ProtoBurst.Runtime;
 using Unity.Burst;
@@ -10,35 +9,32 @@ namespace ProtoBurst.Message
     [BurstCompile]
     public struct Any : IProtoBurstMessage, IDisposable
     {
-        private static readonly SampleTypeUrl AnyTypeUrl =
-            SampleTypeUrlRegistry.GetOrCreate(Google.Protobuf.WellKnownTypes.Any.Descriptor);
-
-        public SampleTypeUrl TypeUrl => AnyTypeUrl;
+        private static readonly FixedString128Bytes TypeUrl = "type.googleapis.com/google.protobuf.Any";
 
         private NativeArray<byte> _msgBytes;
-        private SampleTypeUrl _msgTypeUrl;
+        private NativeArray<byte> _msgTypeUrlBytes;
 
-        private Any(NativeArray<byte> msgBytes, SampleTypeUrl msgTypeUrl)
+        private static readonly uint TypeUrlTag = WireFormat.MakeTag(1, WireFormat.WireType.LengthDelimited);
+        private static readonly uint ValueTag = WireFormat.MakeTag(2, WireFormat.WireType.LengthDelimited);
+
+        private Any(NativeArray<byte> msgBytes, NativeArray<byte> msgTypeUrlBytes)
         {
             _msgBytes = msgBytes;
-            _msgTypeUrl = msgTypeUrl;
+            _msgTypeUrlBytes = msgTypeUrlBytes;
         }
 
         public static Any Pack<T>(T msg, Allocator allocator) where T : unmanaged, IProtoBurstMessage
         {
-            var tmpMsgBytes = new NativeList<byte>(Allocator.Persistent);
-            msg.WriteTo(ref tmpMsgBytes);
-            var msgBytes = tmpMsgBytes.ToArray(allocator);
-            tmpMsgBytes.Dispose();
-            return new Any(msgBytes, msg.TypeUrl);
+            var msgBytes = new BufferWriter(msg.ComputeSize(), allocator);
+            msg.WriteTo(ref msgBytes);
+            return new Any(msgBytes.AsArray(), msg.GetTypeUrl(allocator));
         }
 
         [BurstDiscard]
         public static Any Pack(IMessage msg, Allocator allocator)
         {
             var bytes = new NativeArray<byte>(msg.ToByteArray(), allocator);
-            var typeUrl = SampleTypeUrlRegistry.GetOrCreate(msg.Descriptor);
-            return new Any(bytes, typeUrl);
+            return new Any(bytes, SampleTypeUrl.Alloc(msg.Descriptor, allocator));
         }
 
         public static Any Pack(ReadOnlySpan<byte> value, SampleTypeUrl typeUrl, Allocator allocator)
@@ -53,58 +49,56 @@ namespace ProtoBurst.Message
             return new Any(value, typeUrl);
         }
 
-        [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int ComputeMaxSize()
+        public int ComputeSize()
         {
-            var msgTypeUrl = WritingPrimitives.TagSize + WritingPrimitives.LengthPrefixMaxSize +
-                             _msgTypeUrl.BytesLength;
-            var msgBytes = WritingPrimitives.TagSize + WritingPrimitives.LengthPrefixMaxSize + _msgBytes.Length;
-            return msgTypeUrl + msgBytes;
+            return BufferExtensions.TagSize + BufferExtensions.ComputeLengthPrefixedBytesSize(ref _msgTypeUrlBytes) +
+                   BufferExtensions.TagSize + BufferExtensions.ComputeLengthPrefixedBytesSize(ref _msgBytes);
         }
 
-        [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ComputeMaxSize(ref SampleTypeUrl sampleTypeUrl, int msgMaxSize)
+        public static int ComputeSize(int msgTypeUrlLength, int msgLength)
         {
-            var msgTypeUrl = WritingPrimitives.TagSize + WritingPrimitives.LengthPrefixMaxSize +
-                             sampleTypeUrl.BytesLength;
-            var msgBytes = WritingPrimitives.TagSize + WritingPrimitives.LengthPrefixMaxSize + msgMaxSize;
-            return msgTypeUrl + msgBytes;
+            return BufferExtensions.TagSize + BufferExtensions.ComputeLengthPrefixSize(msgTypeUrlLength) +
+                   BufferExtensions.TagSize + BufferExtensions.ComputeLengthPrefixSize(msgLength) +
+                   msgTypeUrlLength + msgLength;
         }
 
-        [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteTo(ref NativeList<byte> data)
+        public void WriteTo(ref BufferWriter bufferWriter)
         {
-            if (_msgTypeUrl.BytesLength != 0)
+            bufferWriter.WriteTag(TypeUrlTag);
+            bufferWriter.WriteLengthPrefixedBytes(ref _msgTypeUrlBytes);
+            bufferWriter.WriteTag(ValueTag);
+            bufferWriter.WriteLengthPrefixedBytes(ref _msgBytes);
+        }
+
+        public static void WriteTo<T>(ref SampleTypeUrl typeUrl, ref T message, ref BufferWriter bufferWriter) where T : unmanaged, IProtoBurstMessage
+        {
+            var typeUrlBytes = typeUrl.Bytes;
+            bufferWriter.WriteTag(TypeUrlTag);
+            bufferWriter.WriteLengthPrefixedBytes(ref typeUrlBytes);
+            bufferWriter.WriteTag(ValueTag);
+            bufferWriter.WriteLengthPrefixedMessage(ref message);
+        }
+        
+        [BurstDiscard]
+        public static void WriteTo(SampleTypeUrl typeUrl, IMessage message, ref BufferWriter bufferWriter)
+        {
+            unsafe
             {
-                var msgTypeUrlBytes = _msgTypeUrl.AsArray();
-                WritingPrimitives.WriteTag(Google.Protobuf.WellKnownTypes.Any.TypeUrlFieldNumber,
-                    WireFormat.WireType.LengthDelimited, ref data);
-                WritingPrimitives.WriteLengthPrefixedBytes(ref msgTypeUrlBytes, ref data);
+                var typeUrlBytes = typeUrl.Bytes;
+                bufferWriter.WriteTag(TypeUrlTag);
+                bufferWriter.WriteLengthPrefixedBytes(ref typeUrlBytes);
+                bufferWriter.WriteTag(ValueTag);
+                var bytes = message.ToByteArray();
+                bufferWriter.WriteLength(bytes.Length);
+            
+                fixed(byte* bytesPtr = bytes)
+                    bufferWriter.WriteBytes(bytesPtr, bytes.Length);
             }
-
-            WritingPrimitives.WriteTag(Google.Protobuf.WellKnownTypes.Any.ValueFieldNumber,
-                WireFormat.WireType.LengthDelimited, ref data);
-            WritingPrimitives.WriteLengthPrefixedBytes(ref _msgBytes, ref data);
         }
 
-        [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteToNoResize(ref NativeList<byte> data)
+        public SampleTypeUrl GetTypeUrl(Allocator allocator)
         {
-            if (_msgTypeUrl.BytesLength != 0)
-            {
-                var msgTypeUrlBytes = _msgTypeUrl.AsArray();
-                WritingPrimitives.WriteTagNoResize(Google.Protobuf.WellKnownTypes.Any.TypeUrlFieldNumber,
-                    WireFormat.WireType.LengthDelimited, ref data);
-                WritingPrimitives.WriteLengthPrefixedBytesNoResize(ref msgTypeUrlBytes, ref data);
-            }
-
-            WritingPrimitives.WriteTagNoResize(Google.Protobuf.WellKnownTypes.Any.ValueFieldNumber,
-                WireFormat.WireType.LengthDelimited, ref data);
-            WritingPrimitives.WriteLengthPrefixedBytesNoResize(ref _msgBytes, ref data);
+            return SampleTypeUrl.Alloc(TypeUrl, allocator);
         }
 
         public void Dispose()

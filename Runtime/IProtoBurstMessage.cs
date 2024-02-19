@@ -5,12 +5,10 @@ namespace ProtoBurst
 {
     public interface IProtoBurstMessage
     {
-        public int ComputeMaxSize();
+        public int ComputeSize();
 
-        public void WriteToNoResize(ref NativeList<byte> data);
-        
-        public void WriteTo(ref NativeList<byte> data);
-        
-        public SampleTypeUrl TypeUrl { get; }
+        public void WriteTo(ref BufferWriter bufferWriter);
+
+        public SampleTypeUrl GetTypeUrl(Allocator allocator);
     }
 }

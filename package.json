@@ -11,7 +11,8 @@
   "dependencies": {
     "com.unity.test-framework": "2.0.1-pre.18",
     "com.unity.burst": "1.8.4",
-    "com.unity.collections": "2.1.4"
+    "com.unity.collections": "2.1.4",
+    "com.unity.mathematics": "1.2.6"
   },
   "keywords": [
     "ProtoBuf",

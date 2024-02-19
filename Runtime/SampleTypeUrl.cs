@@ -1,45 +1,97 @@
 using System;
+using Google.Protobuf.Reflection;
+using Unity.Burst;
 using Unity.Collections;
 
 namespace ProtoBurst.Packages.ProtoBurst.Runtime
 {
+    [BurstCompile]
     public struct SampleTypeUrl : IDisposable
     {
-        public int Id;
         public NativeArray<byte> Bytes;
 
-        private SampleTypeUrl(int id, NativeArray<byte> bytes)
+        private SampleTypeUrl(NativeArray<byte> bytes)
         {
-            Id = id;
             Bytes = bytes;
         }
 
         // ReSharper restore Unity.ExpensiveCode
-        internal static SampleTypeUrl Create(int id, string typeUrl, Allocator allocator)
+        
+        [BurstDiscard]
+        public static SampleTypeUrl Alloc(IDescriptor descriptor, Allocator allocator)
         {
-            var bytes = new NativeList<byte>(Allocator.TempJob);
-            WritingPrimitives.WriteLengthPrefixedString(typeUrl, bytes);
-            var sampleTypeUrl = new SampleTypeUrl(id, new NativeArray<byte>(bytes.AsArray(), allocator));
-            bytes.Dispose();
-            return sampleTypeUrl;
+            return Alloc("type.googleapis.com", descriptor, allocator);
+        }
+        
+        // ReSharper restore Unity.ExpensiveCode
+
+        [BurstDiscard]
+        public static SampleTypeUrl Alloc(string prefix, IDescriptor descriptor, Allocator allocator)
+        {
+            var typeUrl = !prefix.EndsWith("/") ? prefix + "/" + descriptor.FullName : prefix + descriptor.FullName;
+            return AllocInternal(typeUrl, allocator);
         }
 
-        internal static SampleTypeUrl Create<T>(int id, T typeUrl, Allocator allocator)
-            where T : unmanaged, IUTF8Bytes, IIndexable<byte>
+        [BurstDiscard]
+        public static SampleTypeUrl Alloc<TU>(TU descriptorFullName, Allocator allocator)
+            where TU : unmanaged, IUTF8Bytes, INativeList<byte>, IIndexable<byte>
         {
-            var bytes = new NativeList<byte>(Allocator.TempJob);
-            WritingPrimitives.WriteLengthPrefixedFixedString(ref typeUrl, ref bytes);
-            var sampleTypeUrl = new SampleTypeUrl(id, new NativeArray<byte>(bytes.AsArray(), allocator));
-            bytes.Dispose();
-            return sampleTypeUrl;
+            return Alloc(new FixedString32Bytes("type.googleapis.com"), descriptorFullName, allocator);
         }
-        
+
+        [BurstDiscard]
+        public static SampleTypeUrl Alloc<TU, TV>(TU prefix, TV descriptorFullName, Allocator allocator)
+            where TU : unmanaged, IUTF8Bytes, INativeList<byte>, IIndexable<byte>
+            where TV : unmanaged, IUTF8Bytes, INativeList<byte>, IIndexable<byte>
+        {
+            var typeUrl = new FixedString512Bytes();
+
+            if (prefix.EndsWith('/'))
+            {
+                typeUrl.Append(prefix);
+                typeUrl.Append(descriptorFullName);
+            }
+            else
+            {
+                typeUrl.Append(prefix);
+                typeUrl.Append('/');
+                typeUrl.Append(descriptorFullName);
+            }
+
+            return AllocInternal(typeUrl, allocator);
+        }
+
+        // ReSharper restore Unity.ExpensiveCode
+
+        [BurstDiscard]
+        private static SampleTypeUrl AllocInternal(string typeUrl, Allocator allocator)
+        {
+            var length = BufferExtensions.ComputeStringSize(typeUrl);
+            var buffer = new BufferWriter(length, allocator);
+            buffer.WriteString(typeUrl);
+            return new SampleTypeUrl(buffer.AsArray());
+        }
+
+        private static SampleTypeUrl AllocInternal<T>(T typeUrl, Allocator allocator)
+            where T : unmanaged, IUTF8Bytes, INativeList<byte>
+        {
+            var length = BufferExtensions.ComputeFixedStringSize(ref typeUrl);
+            var buffer = new BufferWriter(length, allocator);
+            buffer.WriteFixedString(ref typeUrl);
+            return new SampleTypeUrl(buffer.AsArray());
+        }
+
         public int BytesLength => Bytes.Length;
-        
+
         public NativeArray<byte> AsArray() => Bytes;
-        
+
         public static implicit operator NativeArray<byte>(SampleTypeUrl sampleTypeUrl) => sampleTypeUrl.AsArray();
-        
+
+        public void Free()
+        {
+            Dispose();
+        }
+
         public void Dispose()
         {
             Bytes.Dispose();

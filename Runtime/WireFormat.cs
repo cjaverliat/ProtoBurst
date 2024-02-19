@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using Unity.Burst;
 
 namespace ProtoBurst
 {
@@ -10,7 +12,9 @@ namespace ProtoBurst
         public static WireType GetTagWireType(uint tag) => (WireType)((int)tag & 7);
 
         public static int GetTagFieldNumber(uint tag) => (int)(tag >> 3);
-
+        
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint MakeTag(int fieldNumber, WireType wireType) =>
             (uint)((WireType)(fieldNumber << 3) | wireType);
 
