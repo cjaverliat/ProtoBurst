@@ -33,10 +33,11 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
         }
 
         [BurstDiscard]
-        public static SampleTypeUrl Alloc<TU>(TU descriptorFullName, Allocator allocator)
+        public static SampleTypeUrl Alloc<TU>(TU typeUrl, Allocator allocator)
             where TU : unmanaged, IUTF8Bytes, INativeList<byte>, IIndexable<byte>
         {
-            return Alloc(new FixedString32Bytes("type.googleapis.com"), descriptorFullName, allocator);
+            // TODO: check typeUrl is valid and contains prefix
+            return AllocInternal(typeUrl, allocator);
         }
 
         [BurstDiscard]

@@ -3,6 +3,7 @@ using Google.Protobuf;
 using ProtoBurst.Packages.ProtoBurst.Runtime;
 using Unity.Burst;
 using Unity.Collections;
+using UnityEngine;
 
 namespace ProtoBurst.Message
 {
@@ -51,15 +52,20 @@ namespace ProtoBurst.Message
 
         public int ComputeSize()
         {
-            return BufferExtensions.TagSize + BufferExtensions.ComputeLengthPrefixedBytesSize(ref _msgTypeUrlBytes) +
-                   BufferExtensions.TagSize + BufferExtensions.ComputeLengthPrefixedBytesSize(ref _msgBytes);
+            return BufferExtensions.ComputeTagSize(TypeUrlTag) +
+                   BufferExtensions.ComputeLengthPrefixedBytesSize(ref _msgTypeUrlBytes) +
+                   BufferExtensions.ComputeTagSize(ValueTag) +
+                   BufferExtensions.ComputeLengthPrefixedBytesSize(ref _msgBytes);
         }
 
         public static int ComputeSize(int msgTypeUrlLength, int msgLength)
         {
-            return BufferExtensions.TagSize + BufferExtensions.ComputeLengthPrefixSize(msgTypeUrlLength) +
-                   BufferExtensions.TagSize + BufferExtensions.ComputeLengthPrefixSize(msgLength) +
-                   msgTypeUrlLength + msgLength;
+            return BufferExtensions.ComputeTagSize(TypeUrlTag) +
+                   BufferExtensions.ComputeLengthPrefixSize(msgTypeUrlLength) +
+                   msgTypeUrlLength +
+                   BufferExtensions.ComputeTagSize(ValueTag) +
+                   BufferExtensions.ComputeLengthPrefixSize(msgLength) +
+                   msgLength;
         }
 
         public void WriteTo(ref BufferWriter bufferWriter)
@@ -70,7 +76,8 @@ namespace ProtoBurst.Message
             bufferWriter.WriteLengthPrefixedBytes(ref _msgBytes);
         }
 
-        public static void WriteTo<T>(ref SampleTypeUrl typeUrl, ref T message, ref BufferWriter bufferWriter) where T : unmanaged, IProtoBurstMessage
+        public static void WriteTo<T>(ref SampleTypeUrl typeUrl, ref T message, ref BufferWriter bufferWriter)
+            where T : unmanaged, IProtoBurstMessage
         {
             var typeUrlBytes = typeUrl.Bytes;
             bufferWriter.WriteTag(TypeUrlTag);
@@ -78,7 +85,7 @@ namespace ProtoBurst.Message
             bufferWriter.WriteTag(ValueTag);
             bufferWriter.WriteLengthPrefixedMessage(ref message);
         }
-        
+
         [BurstDiscard]
         public static void WriteTo(SampleTypeUrl typeUrl, IMessage message, ref BufferWriter bufferWriter)
         {
@@ -90,8 +97,8 @@ namespace ProtoBurst.Message
                 bufferWriter.WriteTag(ValueTag);
                 var bytes = message.ToByteArray();
                 bufferWriter.WriteLength(bytes.Length);
-            
-                fixed(byte* bytesPtr = bytes)
+
+                fixed (byte* bytesPtr = bytes)
                     bufferWriter.WriteBytes(bytesPtr, bytes.Length);
             }
         }

@@ -6,6 +6,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace ProtoBurst
 {
@@ -15,59 +16,46 @@ namespace ProtoBurst
     {
         public const int Fixed32Size = 4;
         public const int Fixed64Size = 8;
-        public const int TagSize = 2;
 
-        public const int VarInt32MaxSize = 4;
-        public const int VarInt64MaxSize = 8;
-        public const int Int32MaxSize = VarInt32MaxSize;
-        public const int Int64MaxSize = VarInt64MaxSize;
-        public const int LengthPrefixMaxSize = VarInt32MaxSize;
-        public const int UInt32MaxSize = VarInt32MaxSize;
-        public const int UInt64MaxSize = VarInt64MaxSize;
-
-        public static uint EncodeZigZag32(int n) => (uint)(n << 1 ^ n >> 31);
-
-        public static ulong EncodeZigZag64(long n) => (ulong)(n << 1 ^ n >> 63);
-
-        public static int ComputeVarIntSize(int value)
+        public static int ComputeInt32Size(int value)
         {
-            return ComputeVarIntSize(EncodeZigZag32(value));
+            return ComputeVarIntSize((uint)value);
         }
 
-        public static int ComputeVarIntSize(long value)
-        {
-            return ComputeVarIntSize(EncodeZigZag64(value));
-        }
-
-        public static int ComputeVarIntSize(uint value)
+        public static int ComputeInt64Size(long value)
         {
             return ComputeVarIntSize((ulong)value);
         }
 
         public static int ComputeVarIntSize(ulong value)
         {
-            if (((long) value & sbyte.MinValue) == 0L)
+            if (((long)value & sbyte.MinValue) == 0L)
                 return 1;
-            if (((long) value & -16384L) == 0L)
+            if (((long)value & -16384L) == 0L)
                 return 2;
-            if (((long) value & -2097152L) == 0L)
+            if (((long)value & -2097152L) == 0L)
                 return 3;
-            if (((long) value & -268435456L) == 0L)
+            if (((long)value & -268435456L) == 0L)
                 return 4;
-            if (((long) value & -34359738368L) == 0L)
+            if (((long)value & -34359738368L) == 0L)
                 return 5;
-            if (((long) value & -4398046511104L) == 0L)
+            if (((long)value & -4398046511104L) == 0L)
                 return 6;
-            if (((long) value & -562949953421312L) == 0L)
+            if (((long)value & -562949953421312L) == 0L)
                 return 7;
-            if (((long) value & -72057594037927936L) == 0L)
+            if (((long)value & -72057594037927936L) == 0L)
                 return 8;
-            return ((long) value & long.MinValue) == 0L ? 9 : 10;
+            return ((long)value & long.MinValue) == 0L ? 9 : 10;
         }
-        
+
+        public static int ComputeTagSize(uint tag)
+        {
+            return ComputeVarIntSize(tag);
+        }
+
         public static int ComputeLengthPrefixSize(int length)
         {
-            return ComputeVarIntSize(length);
+            return ComputeVarIntSize((ulong)length);
         }
 
         public static int ComputeFixedStringSize<T>(ref T value) where T : unmanaged, IUTF8Bytes, IIndexable<byte>
@@ -97,7 +85,7 @@ namespace ProtoBurst
         {
             bufferWriter.WriteBytes((byte*)bytes.GetUnsafePtr(), bytes.Length);
         }
-        
+
         public static void WriteVarInt(this BufferWriter bufferWriter, ulong value)
         {
             if (value < 128UL)
@@ -170,32 +158,32 @@ namespace ProtoBurst
             bufferWriter.WriteVarInt(value);
         }
 
-        public static void WriteSInt32(this BufferWriter bufferWriter, int value)
+        public static void WriteInt32(this BufferWriter bufferWriter, int value)
         {
-            bufferWriter.WriteVarInt(EncodeZigZag32(value));
+            bufferWriter.WriteVarInt((uint)value);
         }
 
-        public static void WriteSInt64(this BufferWriter bufferWriter, long value)
+        public static void WriteInt64(this BufferWriter bufferWriter, long value)
         {
-            bufferWriter.WriteVarInt(EncodeZigZag64(value));
+            bufferWriter.WriteVarInt((ulong)value);
         }
 
         public static void WriteTag(this BufferWriter bufferWriter, uint tag)
         {
             bufferWriter.WriteVarInt(tag);
         }
-        
+
         public static void WriteTag(this BufferWriter bufferWriter, int fieldNumber, WireFormat.WireType wireType)
         {
             bufferWriter.WriteVarInt(WireFormat.MakeTag(fieldNumber, wireType));
         }
-        
+
         public static void WriteLength(this BufferWriter bufferWriter, int length)
         {
-            bufferWriter.WriteVarInt((ulong) length);
+            bufferWriter.WriteVarInt((ulong)length);
         }
 
-        public static void WriteFixedString<T>(this BufferWriter bufferWriter, ref T value)
+        public static void WriteLengthPrefixedFixedString<T>(this BufferWriter bufferWriter, ref T value)
             where T : unmanaged, IUTF8Bytes, IIndexable<byte>
         {
             bufferWriter.WriteLength(value.Length);
@@ -208,7 +196,7 @@ namespace ProtoBurst
 
         [BurstDiscard]
         // ReSharper restore Unity.ExpensiveCode
-        public static void WriteString(this BufferWriter bufferWriter, string value)
+        public static void WriteLengthPrefixedString(this BufferWriter bufferWriter, string value)
         {
             var bytes = Encoding.UTF8.GetBytes(value);
             bufferWriter.WriteLength(bytes.Length);
@@ -220,10 +208,35 @@ namespace ProtoBurst
                 }
             }
         }
-
-        public static void WriteLengthPrefixedMessage<T>(this BufferWriter bufferWriter, ref T message) where T : IProtoBurstMessage
+        
+        public static void WriteFixedString<T>(this BufferWriter bufferWriter, ref T value)
+            where T : unmanaged, IUTF8Bytes, IIndexable<byte>
         {
-            bufferWriter.WriteLength(message.ComputeSize());
+            unsafe
+            {
+                bufferWriter.WriteBytes(value.GetUnsafePtr(), value.Length);
+            }
+        }
+
+        [BurstDiscard]
+        // ReSharper restore Unity.ExpensiveCode
+        public static void WriteString(this BufferWriter bufferWriter, string value)
+        {
+            var bytes = Encoding.UTF8.GetBytes(value);
+            unsafe
+            {
+                fixed (byte* ptr = bytes)
+                {
+                    bufferWriter.WriteBytes(ptr, bytes.Length);
+                }
+            }
+        }
+
+        public static void WriteLengthPrefixedMessage<T>(this BufferWriter bufferWriter, ref T message)
+            where T : IProtoBurstMessage
+        {
+            var size = message.ComputeSize();
+            bufferWriter.WriteLength(size);
             message.WriteTo(ref bufferWriter);
         }
 
