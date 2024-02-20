@@ -10,41 +10,43 @@ namespace ProtoBurst.Message
     {
         private static readonly FixedString128Bytes TypeUrl = "type.googleapis.com/google.protobuf.Any";
 
-        private NativeArray<byte> _value;
-        private NativeArray<byte> _typeUrl;
+        private NativeList<byte> _valueBytes;
+        private NativeList<byte> _typeUrlBytes;
 
         public static readonly uint TypeUrlTag = WireFormat.MakeTag(1, WireFormat.WireType.LengthDelimited);
         public static readonly uint ValueTag = WireFormat.MakeTag(2, WireFormat.WireType.LengthDelimited);
 
-        private Any(NativeArray<byte> value, NativeArray<byte> typeUrl)
+        private Any(NativeList<byte> valueBytes, NativeList<byte> typeUrlBytes)
         {
-            _value = value;
-            _typeUrl = typeUrl;
+            _valueBytes = valueBytes;
+            _typeUrlBytes = typeUrlBytes;
         }
 
-        public static Any Pack(ReadOnlySpan<byte> value, ReadOnlySpan<byte> typeUrlBytes, Allocator allocator)
+        public static Any Pack(ReadOnlySpan<byte> valueBytes, ReadOnlySpan<byte> typeUrlBytes, Allocator allocator)
         {
-            var valueArr = new NativeArray<byte>(value.Length, allocator);
-            var typeUrlArr = new NativeArray<byte>(typeUrlBytes.Length, allocator);
-            value.CopyTo(valueArr);
-            typeUrlBytes.CopyTo(typeUrlArr);
-            return new Any(valueArr, typeUrlArr);
+            var valueBytesList = new NativeList<byte>(valueBytes.Length, allocator);
+            var typeUrlBytesList = new NativeList<byte>(typeUrlBytes.Length, allocator);
+            valueBytesList.ResizeUninitialized(valueBytes.Length);
+            typeUrlBytesList.ResizeUninitialized(typeUrlBytes.Length);
+            valueBytes.CopyTo(valueBytesList.AsArray().AsSpan());
+            typeUrlBytes.CopyTo(typeUrlBytesList.AsArray().AsSpan());
+            return new Any(valueBytesList, typeUrlBytesList);
         }
 
         public int ComputeSize()
         {
             return BufferExtensions.ComputeTagSize(TypeUrlTag) +
-                   BufferExtensions.ComputeLengthPrefixedBytesSize(ref _typeUrl) +
+                   BufferExtensions.ComputeLengthPrefixedBytesSize(ref _typeUrlBytes) +
                    BufferExtensions.ComputeTagSize(ValueTag) +
-                   BufferExtensions.ComputeLengthPrefixedBytesSize(ref _value);
+                   BufferExtensions.ComputeLengthPrefixedBytesSize(ref _valueBytes);
         }
 
         public void WriteTo(ref BufferWriter bufferWriter)
         {
             bufferWriter.WriteTag(TypeUrlTag);
-            bufferWriter.WriteLengthPrefixedBytes(ref _typeUrl);
+            bufferWriter.WriteLengthPrefixedBytes(ref _typeUrlBytes);
             bufferWriter.WriteTag(ValueTag);
-            bufferWriter.WriteLengthPrefixedBytes(ref _value);
+            bufferWriter.WriteLengthPrefixedBytes(ref _valueBytes);
         }
 
         public static int ComputeSize(int typeUrlBytesLength, int valueBytesLength)
@@ -73,7 +75,8 @@ namespace ProtoBurst.Message
 
         public void Dispose()
         {
-            _value.Dispose();
+            _valueBytes.Dispose();
+            _typeUrlBytes.Dispose();
         }
     }
 }

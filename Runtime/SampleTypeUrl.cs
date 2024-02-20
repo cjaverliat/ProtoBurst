@@ -2,17 +2,18 @@ using System;
 using Google.Protobuf.Reflection;
 using Unity.Burst;
 using Unity.Collections;
+using UnityEngine;
 
 namespace ProtoBurst.Packages.ProtoBurst.Runtime
 {
     [BurstCompile]
     public struct SampleTypeUrl : IDisposable
     {
-        public NativeArray<byte> Bytes;
+        private NativeList<byte> _bytes;
 
-        private SampleTypeUrl(NativeArray<byte> bytes)
+        private SampleTypeUrl(NativeList<byte> bytes)
         {
-            Bytes = bytes;
+            _bytes = bytes;
         }
 
         // ReSharper restore Unity.ExpensiveCode
@@ -68,34 +69,35 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
         private static SampleTypeUrl AllocInternal(string typeUrl, Allocator allocator)
         {
             var length = BufferExtensions.ComputeStringSize(typeUrl);
-            var buffer = new BufferWriter(length, allocator);
+            var bytes = new NativeList<byte>(length, allocator);
+            var buffer = new BufferWriter(bytes);
             buffer.WriteString(typeUrl);
-            return new SampleTypeUrl(buffer.AsArray());
+            return new SampleTypeUrl(bytes);
         }
 
         private static SampleTypeUrl AllocInternal<T>(T typeUrl, Allocator allocator)
             where T : unmanaged, IUTF8Bytes, INativeList<byte>
         {
             var length = BufferExtensions.ComputeFixedStringSize(ref typeUrl);
-            var buffer = new BufferWriter(length, allocator);
+            var bytes = new NativeList<byte>(length, allocator);
+            var buffer = new BufferWriter(bytes);
             buffer.WriteFixedString(ref typeUrl);
-            return new SampleTypeUrl(buffer.AsArray());
+            return new SampleTypeUrl(bytes);
         }
 
-        public int BytesLength => Bytes.Length;
+        public int BytesLength => _bytes.Length;
 
-        public NativeArray<byte> AsArray() => Bytes;
+        public NativeArray<byte> AsArray() => _bytes.AsArray();
 
+        public ReadOnlySpan<byte> AsReadOnlySpan() => _bytes.AsArray().AsReadOnlySpan();
+        
         public static implicit operator NativeArray<byte>(SampleTypeUrl sampleTypeUrl) => sampleTypeUrl.AsArray();
-
-        public void Free()
-        {
-            Dispose();
-        }
+        
+        public static implicit operator ReadOnlySpan<byte>(SampleTypeUrl sampleTypeUrl) => sampleTypeUrl.AsReadOnlySpan();
 
         public void Dispose()
         {
-            Bytes.Dispose();
+            _bytes.Dispose();
         }
     }
 }

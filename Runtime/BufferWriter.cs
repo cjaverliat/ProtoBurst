@@ -6,16 +6,11 @@ using Unity.Mathematics;
 namespace ProtoBurst.Packages.ProtoBurst.Runtime
 {
     [BurstCompile]
-    public struct BufferWriter : IDisposable
+    public struct BufferWriter
     {
         private NativeList<byte> _bytes;
         
         public int Length => _bytes.Length;
-
-        public BufferWriter(int capacity, Allocator allocator)
-        {
-            _bytes = new NativeList<byte>(capacity, allocator);
-        }
 
         public BufferWriter(NativeList<byte> bytes)
         {
@@ -52,16 +47,6 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
             {
                 _bytes.AddRangeNoResize(&value, 8);
             }
-        }
-
-        public void Dispose()
-        {
-            _bytes.Dispose();
-        }
-
-        public NativeArray<byte> AsArray()
-        {
-            return _bytes.AsArray();
         }
 
         private static uint ReverseByteOrder(uint val)

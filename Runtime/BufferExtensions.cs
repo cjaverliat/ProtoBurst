@@ -70,6 +70,11 @@ namespace ProtoBurst
             return ComputeLengthPrefixSize(bytesLength) + bytesLength;
         }
 
+        public static int ComputeLengthPrefixedBytesSize(ref NativeList<byte> bytes)
+        {
+            return ComputeLengthPrefixSize(bytes.Length) + bytes.Length;
+        }
+        
         public static int ComputeLengthPrefixedBytesSize(ref NativeArray<byte> bytes)
         {
             return ComputeLengthPrefixSize(bytes.Length) + bytes.Length;
@@ -81,6 +86,11 @@ namespace ProtoBurst
             return ComputeLengthPrefixSize(length) + length;
         }
 
+        public static unsafe void WriteBytes(this BufferWriter bufferWriter, ref NativeList<byte> bytes)
+        {
+            bufferWriter.WriteBytes(bytes.GetUnsafePtr(), bytes.Length);
+        }
+        
         public static unsafe void WriteBytes(this BufferWriter bufferWriter, ref NativeArray<byte> bytes)
         {
             bufferWriter.WriteBytes((byte*)bytes.GetUnsafePtr(), bytes.Length);
@@ -240,6 +250,12 @@ namespace ProtoBurst
             message.WriteTo(ref bufferWriter);
         }
 
+        public static void WriteLengthPrefixedBytes(this BufferWriter bufferWriter, ref NativeList<byte> bytes)
+        {
+            bufferWriter.WriteLength(bytes.Length);
+            bufferWriter.WriteBytes(ref bytes);
+        }
+        
         public static void WriteLengthPrefixedBytes(this BufferWriter bufferWriter, ref NativeArray<byte> bytes)
         {
             bufferWriter.WriteLength(bytes.Length);
