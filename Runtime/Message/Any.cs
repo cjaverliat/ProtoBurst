@@ -23,12 +23,12 @@ namespace ProtoBurst.Message
             _typeUrlBytes = typeUrlBytes;
         }
 
-        public static Any Pack<T>(T message, Allocator allocator) where T : unmanaged, IProtoBurstMessage
+        public static Any Pack<T>(ref T message, Allocator allocator) where T : unmanaged, IProtoBurstMessage
         {
             return new Any(message.ToBytes(allocator), message.GetTypeUrl(allocator));
         }
 
-        public static Any Pack(NativeList<byte> valueBytes, NativeList<byte> typeUrlBytes, Allocator allocator)
+        public static Any Pack(ref NativeList<byte> valueBytes, ref NativeList<byte> typeUrlBytes, Allocator allocator)
         {
             var valueBytesCopy = new NativeList<byte>(valueBytes.Length, allocator);
             var typeUrlBytesCopy = new NativeList<byte>(typeUrlBytes.Length, allocator);
