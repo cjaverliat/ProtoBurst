@@ -109,7 +109,7 @@ namespace ProtoBurst
                     if (value > (ulong)sbyte.MaxValue)
                     {
                         // Add the continuation bit
-                        bufferWriter.WriteByte((byte)(value & 128UL));
+                        bufferWriter.WriteByte((byte) (value & (ulong) sbyte.MaxValue | 128UL));
                         value >>= 7;
                     }
                     else
