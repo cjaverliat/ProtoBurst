@@ -19,16 +19,22 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
         
         public void WriteByte(byte val)
         {
+            CheckHasEnoughCapacity(_bytes.Length + 1);
+            
             _bytes.AddNoResize(val);
         }
 
         public unsafe void WriteBytes(byte* bytes, int length)
         {
+            CheckHasEnoughCapacity(_bytes.Length + length);
+            
             _bytes.AddRangeNoResize(bytes, length);
         }
 
         public void WriteLittleEndian32(uint value)
         {
+            CheckHasEnoughCapacity(_bytes.Length + 4);
+            
             if (!BitConverter.IsLittleEndian)
                 value = ReverseByteOrder(value);
 
@@ -40,6 +46,8 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
 
         public void WriteLittleEndian64(ulong value)
         {
+            CheckHasEnoughCapacity(_bytes.Length + 8);
+            
             if (!BitConverter.IsLittleEndian)
                 value = ReverseByteOrder(value);
 
@@ -61,6 +69,14 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
                    math.ror(val & 0x0000FF0000000000, 24) | math.ror(val & 0x000000FF00000000, 8) |
                    math.rol(val & 0x00000000FF000000, 8) | math.rol(val & 0x0000000000FF0000, 24) |
                    math.rol(val & 0x000000000000FF00, 40) | math.rol(val & 0x00000000000000FF, 56);
+        }
+
+        private void CheckHasEnoughCapacity(int length)
+        {
+            if (_bytes.Capacity < length)
+            {
+                throw new InvalidOperationException($"Buffer capacity is too small. Current capacity: {_bytes.Capacity}, required capacity: {length}");
+            }
         }
     }
 }

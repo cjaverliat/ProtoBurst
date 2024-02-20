@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using ProtoBurst.Packages.ProtoBurst.Runtime;
 using Unity.Burst;
 using Unity.Collections;
@@ -22,15 +23,18 @@ namespace ProtoBurst.Message
             _typeUrlBytes = typeUrlBytes;
         }
 
-        public static Any Pack(ReadOnlySpan<byte> valueBytes, ReadOnlySpan<byte> typeUrlBytes, Allocator allocator)
+        public static Any Pack<T>(T message, Allocator allocator) where T : unmanaged, IProtoBurstMessage
         {
-            var valueBytesList = new NativeList<byte>(valueBytes.Length, allocator);
-            var typeUrlBytesList = new NativeList<byte>(typeUrlBytes.Length, allocator);
-            valueBytesList.ResizeUninitialized(valueBytes.Length);
-            typeUrlBytesList.ResizeUninitialized(typeUrlBytes.Length);
-            valueBytes.CopyTo(valueBytesList.AsArray().AsSpan());
-            typeUrlBytes.CopyTo(typeUrlBytesList.AsArray().AsSpan());
-            return new Any(valueBytesList, typeUrlBytesList);
+            return new Any(message.ToBytes(allocator), message.GetTypeUrl(allocator));
+        }
+
+        public static Any Pack(NativeList<byte> valueBytes, NativeList<byte> typeUrlBytes, Allocator allocator)
+        {
+            var valueBytesCopy = new NativeList<byte>(valueBytes.Length, allocator);
+            var typeUrlBytesCopy = new NativeList<byte>(typeUrlBytes.Length, allocator);
+            valueBytesCopy.AddRange(valueBytes.AsArray());
+            typeUrlBytesCopy.AddRange(typeUrlBytes.AsArray());
+            return new Any(valueBytesCopy, typeUrlBytesCopy);
         }
 
         public int ComputeSize()
@@ -49,6 +53,7 @@ namespace ProtoBurst.Message
             bufferWriter.WriteLengthPrefixedBytes(ref _valueBytes);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ComputeSize(int typeUrlBytesLength, int valueBytesLength)
         {
             return BufferExtensions.ComputeTagSize(TypeUrlTag) +
@@ -57,15 +62,14 @@ namespace ProtoBurst.Message
                    BufferExtensions.ComputeLengthPrefixSize(valueBytesLength) + valueBytesLength;
         }
 
-        public static unsafe void WriteTo(
-            byte* typeUrlBytesPtr, int typeUrlBytesLength,
-            byte* valueBytesPtr, int valueBytesLength,
-            ref BufferWriter bufferWriter)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteTo<T>(ref NativeArray<byte> typeUrlBytes, ref T message, ref BufferWriter bufferWriter)
+            where T : unmanaged, IProtoBurstMessage
         {
             bufferWriter.WriteTag(TypeUrlTag);
-            bufferWriter.WriteLengthPrefixedBytes(typeUrlBytesPtr, typeUrlBytesLength);
+            bufferWriter.WriteLengthPrefixedBytes(ref typeUrlBytes);
             bufferWriter.WriteTag(ValueTag);
-            bufferWriter.WriteLengthPrefixedBytes(valueBytesPtr, valueBytesLength);
+            bufferWriter.WriteLengthPrefixedMessage(ref message);
         }
 
         public SampleTypeUrl GetTypeUrl(Allocator allocator)

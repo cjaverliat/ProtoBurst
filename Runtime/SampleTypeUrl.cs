@@ -88,10 +88,14 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
         public int BytesLength => _bytes.Length;
 
         public NativeArray<byte> AsArray() => _bytes.AsArray();
+        
+        public NativeList<byte> AsList() => _bytes;
 
         public ReadOnlySpan<byte> AsReadOnlySpan() => _bytes.AsArray().AsReadOnlySpan();
         
         public static implicit operator NativeArray<byte>(SampleTypeUrl sampleTypeUrl) => sampleTypeUrl.AsArray();
+        
+        public static implicit operator NativeList<byte>(SampleTypeUrl sampleTypeUrl) => sampleTypeUrl.AsList();
         
         public static implicit operator ReadOnlySpan<byte>(SampleTypeUrl sampleTypeUrl) => sampleTypeUrl.AsReadOnlySpan();
 

@@ -88,12 +88,12 @@ namespace ProtoBurst
 
         public static unsafe void WriteBytes(this BufferWriter bufferWriter, ref NativeList<byte> bytes)
         {
-            bufferWriter.WriteBytes(bytes.GetUnsafePtr(), bytes.Length);
+            bufferWriter.WriteBytes(bytes.GetUnsafeReadOnlyPtr(), bytes.Length);
         }
         
         public static unsafe void WriteBytes(this BufferWriter bufferWriter, ref NativeArray<byte> bytes)
         {
-            bufferWriter.WriteBytes((byte*)bytes.GetUnsafePtr(), bytes.Length);
+            bufferWriter.WriteBytes((byte*)bytes.GetUnsafeReadOnlyPtr(), bytes.Length);
         }
 
         public static void WriteVarInt(this BufferWriter bufferWriter, ulong value)
