@@ -21,7 +21,7 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
         {
             _bytes = bytes;
         }
-
+        
         public void WriteByte(byte val)
         {
             _bytes.AddNoResize(val);
@@ -62,21 +62,6 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
         public NativeArray<byte> AsArray()
         {
             return _bytes.AsArray();
-        }
-
-        public ReadOnlySpan<byte> AsReadOnlySpan()
-        {
-            return _bytes.AsArray().AsReadOnlySpan();
-        }
-
-        public Span<byte> AsSpan()
-        {
-            return _bytes.AsArray().AsSpan();
-        }
-
-        public NativeList<byte>.ParallelWriter AsParallelWriter()
-        {
-            return _bytes.AsParallelWriter();
         }
 
         private static uint ReverseByteOrder(uint val)

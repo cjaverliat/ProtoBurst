@@ -245,5 +245,11 @@ namespace ProtoBurst
             bufferWriter.WriteLength(bytes.Length);
             bufferWriter.WriteBytes(ref bytes);
         }
+        
+        public static unsafe void WriteLengthPrefixedBytes(this BufferWriter bufferWriter, byte* bytes, int length)
+        {
+            bufferWriter.WriteLength(length);
+            bufferWriter.WriteBytes(bytes, length);
+        }
     }
 }
