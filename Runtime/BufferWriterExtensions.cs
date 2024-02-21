@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
+using Google.Protobuf;
 using ProtoBurst.Packages.ProtoBurst.Runtime;
 using Unity.Burst;
 using Unity.Collections;
@@ -244,6 +246,25 @@ namespace ProtoBurst
             }
         }
 
+        [BurstDiscard]
+        public static void WriteLengthPrefixedMessage(this BufferWriter bufferWriter, ref IMessage message)
+        {
+            var size = message.CalculateSize();
+            
+            var data = (Span<byte>) stackalloc byte[size];
+            message.WriteTo(data);
+            
+            bufferWriter.WriteLength(size);
+
+            unsafe
+            {
+                fixed(byte* ptr = data)
+                {
+                    bufferWriter.WriteBytes(ptr, size);
+                }
+            }
+        }
+        
         public static void WriteLengthPrefixedMessage<T>(this BufferWriter bufferWriter, ref T message)
             where T : IProtoBurstMessage
         {

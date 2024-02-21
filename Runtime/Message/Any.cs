@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using Google.Protobuf;
 using ProtoBurst.Packages.ProtoBurst.Runtime;
 using Unity.Burst;
 using Unity.Collections;
@@ -65,6 +66,15 @@ namespace ProtoBurst.Message
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteTo<T>(ref NativeArray<byte> typeUrlBytes, ref T message, ref BufferWriter bufferWriter)
             where T : unmanaged, IProtoBurstMessage
+        {
+            bufferWriter.WriteTag(TypeUrlTag);
+            bufferWriter.WriteLengthPrefixedBytes(ref typeUrlBytes);
+            bufferWriter.WriteTag(ValueTag);
+            bufferWriter.WriteLengthPrefixedMessage(ref message);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteTo(ref NativeArray<byte> typeUrlBytes, ref IMessage message, ref BufferWriter bufferWriter)
         {
             bufferWriter.WriteTag(TypeUrlTag);
             bufferWriter.WriteLengthPrefixedBytes(ref typeUrlBytes);
