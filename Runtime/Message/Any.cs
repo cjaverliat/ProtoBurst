@@ -39,10 +39,10 @@ namespace ProtoBurst.Message
 
         public int ComputeSize()
         {
-            return BufferExtensions.ComputeTagSize(TypeUrlTag) +
-                   BufferExtensions.ComputeLengthPrefixedBytesSize(ref _typeUrlBytes) +
-                   BufferExtensions.ComputeTagSize(ValueTag) +
-                   BufferExtensions.ComputeLengthPrefixedBytesSize(ref _valueBytes);
+            return BufferWriterExtensions.ComputeTagSize(TypeUrlTag) +
+                   BufferWriterExtensions.ComputeLengthPrefixedBytesSize(ref _typeUrlBytes) +
+                   BufferWriterExtensions.ComputeTagSize(ValueTag) +
+                   BufferWriterExtensions.ComputeLengthPrefixedBytesSize(ref _valueBytes);
         }
 
         public void WriteTo(ref BufferWriter bufferWriter)
@@ -56,10 +56,10 @@ namespace ProtoBurst.Message
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ComputeSize(int typeUrlBytesLength, int valueBytesLength)
         {
-            return BufferExtensions.ComputeTagSize(TypeUrlTag) +
-                   BufferExtensions.ComputeLengthPrefixSize(typeUrlBytesLength) + typeUrlBytesLength +
-                   BufferExtensions.ComputeTagSize(ValueTag) +
-                   BufferExtensions.ComputeLengthPrefixSize(valueBytesLength) + valueBytesLength;
+            return BufferWriterExtensions.ComputeTagSize(TypeUrlTag) +
+                   BufferWriterExtensions.ComputeLengthPrefixSize(typeUrlBytesLength) + typeUrlBytesLength +
+                   BufferWriterExtensions.ComputeTagSize(ValueTag) +
+                   BufferWriterExtensions.ComputeLengthPrefixSize(valueBytesLength) + valueBytesLength;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

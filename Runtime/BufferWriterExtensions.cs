@@ -1,18 +1,15 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Text;
 using ProtoBurst.Packages.ProtoBurst.Runtime;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace ProtoBurst
 {
     // TODO: implement Insertion methods for all the Write methods + removed any native allocations
     [BurstCompile]
-    public static class BufferExtensions
+    public static class BufferWriterExtensions
     {
         public const int Fixed32Size = 4;
         public const int Fixed64Size = 8;
@@ -74,7 +71,7 @@ namespace ProtoBurst
         {
             return ComputeLengthPrefixSize(bytes.Length) + bytes.Length;
         }
-        
+
         public static int ComputeLengthPrefixedBytesSize(ref NativeArray<byte> bytes)
         {
             return ComputeLengthPrefixSize(bytes.Length) + bytes.Length;
@@ -90,7 +87,7 @@ namespace ProtoBurst
         {
             bufferWriter.WriteBytes(bytes.GetUnsafeReadOnlyPtr(), bytes.Length);
         }
-        
+
         public static unsafe void WriteBytes(this BufferWriter bufferWriter, ref NativeArray<byte> bytes)
         {
             bufferWriter.WriteBytes((byte*)bytes.GetUnsafeReadOnlyPtr(), bytes.Length);
@@ -109,7 +106,7 @@ namespace ProtoBurst
                     if (value > (ulong)sbyte.MaxValue)
                     {
                         // Add the continuation bit
-                        bufferWriter.WriteByte((byte) (value & (ulong) sbyte.MaxValue | 128UL));
+                        bufferWriter.WriteByte((byte)(value & (ulong)sbyte.MaxValue | 128UL));
                         value >>= 7;
                     }
                     else
@@ -218,7 +215,7 @@ namespace ProtoBurst
                 }
             }
         }
-        
+
         public static void WriteFixedString<T>(this BufferWriter bufferWriter, ref T value)
             where T : unmanaged, IUTF8Bytes, IIndexable<byte>
         {
@@ -255,13 +252,13 @@ namespace ProtoBurst
             bufferWriter.WriteLength(bytes.Length);
             bufferWriter.WriteBytes(ref bytes);
         }
-        
+
         public static void WriteLengthPrefixedBytes(this BufferWriter bufferWriter, ref NativeArray<byte> bytes)
         {
             bufferWriter.WriteLength(bytes.Length);
             bufferWriter.WriteBytes(ref bytes);
         }
-        
+
         public static unsafe void WriteLengthPrefixedBytes(this BufferWriter bufferWriter, byte* bytes, int length)
         {
             bufferWriter.WriteLength(length);
