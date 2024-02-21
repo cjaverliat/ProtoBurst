@@ -184,6 +184,11 @@ namespace ProtoBurst
         {
             bufferWriter.WriteVarInt(WireFormat.MakeTag(fieldNumber, wireType));
         }
+        
+        public static void WriteEnum(this BufferWriter bufferWriter, int value)
+        {
+            bufferWriter.WriteVarInt((uint)value);
+        }
 
         public static void WriteLength(this BufferWriter bufferWriter, int length)
         {
