@@ -63,7 +63,7 @@ namespace ProtoBurst
             return ComputeLengthPrefixSize(bytesLength) + bytesLength;
         }
         
-        public static int ComputeLengthPrefixedFixedStringSize<T>(ref T value) where T : unmanaged, IUTF8Bytes, IIndexable<byte>
+        public static int ComputeLengthPrefixedFixedString<T>(ref T value) where T : unmanaged, IUTF8Bytes, IIndexable<byte>
         {
             return ComputeLengthPrefixSize(value.Length) + value.Length;
         }
