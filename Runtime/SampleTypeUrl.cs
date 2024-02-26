@@ -2,7 +2,6 @@ using System;
 using Google.Protobuf.Reflection;
 using Unity.Burst;
 using Unity.Collections;
-using UnityEngine;
 
 namespace ProtoBurst.Packages.ProtoBurst.Runtime
 {
