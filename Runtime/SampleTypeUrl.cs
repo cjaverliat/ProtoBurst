@@ -67,7 +67,7 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
         [BurstDiscard]
         private static SampleTypeUrl AllocInternal(string typeUrl, Allocator allocator)
         {
-            var length = BufferWriterExtensions.ComputeStringSize(typeUrl);
+            var length = BufferWriterExtensions.ComputeLengthPrefixedStringSize(typeUrl);
             var bytes = new NativeList<byte>(length, allocator);
             var buffer = new BufferWriter(bytes);
             buffer.WriteString(typeUrl);
@@ -77,7 +77,7 @@ namespace ProtoBurst.Packages.ProtoBurst.Runtime
         private static SampleTypeUrl AllocInternal<T>(T typeUrl, Allocator allocator)
             where T : unmanaged, IUTF8Bytes, INativeList<byte>
         {
-            var length = BufferWriterExtensions.ComputeFixedStringSize(ref typeUrl);
+            var length = BufferWriterExtensions.ComputeLengthPrefixedFixedStringSize(ref typeUrl);
             var bytes = new NativeList<byte>(length, allocator);
             var buffer = new BufferWriter(bytes);
             buffer.WriteFixedString(ref typeUrl);

@@ -56,16 +56,16 @@ namespace ProtoBurst
             return ComputeVarIntSize((ulong)length);
         }
 
-        public static int ComputeFixedStringSize<T>(ref T value) where T : unmanaged, IUTF8Bytes, IIndexable<byte>
-        {
-            return ComputeLengthPrefixSize(value.Length) + value.Length;
-        }
-
         [BurstDiscard]
-        public static int ComputeStringSize(string value)
+        public static int ComputeLengthPrefixedStringSize(string value)
         {
             var bytesLength = Encoding.UTF8.GetByteCount(value);
             return ComputeLengthPrefixSize(bytesLength) + bytesLength;
+        }
+        
+        public static int ComputeLengthPrefixedFixedStringSize<T>(ref T value) where T : unmanaged, IUTF8Bytes, IIndexable<byte>
+        {
+            return ComputeLengthPrefixSize(value.Length) + value.Length;
         }
 
         public static int ComputeLengthPrefixedBytesSize(ref NativeList<byte> bytes)
