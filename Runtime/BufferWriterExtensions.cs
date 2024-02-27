@@ -246,7 +246,7 @@ namespace ProtoBurst
         }
 
         [BurstDiscard]
-        public static void WriteLengthPrefixedMessage(this BufferWriter bufferWriter, ref IMessage message)
+        public static void WriteLengthPrefixedManagedMessage<T>(this BufferWriter bufferWriter, ref T message) where T : IMessage
         {
             var bytes = message.ToByteArray();
             

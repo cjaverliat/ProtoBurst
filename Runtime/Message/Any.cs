@@ -74,12 +74,12 @@ namespace ProtoBurst.Message
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteTo(ref NativeArray<byte> typeUrlBytes, ref IMessage message, ref BufferWriter bufferWriter)
+        public static void WriteManagedTo<T>(ref NativeArray<byte> typeUrlBytes, ref T message, ref BufferWriter bufferWriter) where T : IMessage
         {
             bufferWriter.WriteTag(TypeUrlTag);
             bufferWriter.WriteLengthPrefixedBytes(ref typeUrlBytes);
             bufferWriter.WriteTag(ValueTag);
-            bufferWriter.WriteLengthPrefixedMessage(ref message);
+            bufferWriter.WriteLengthPrefixedManagedMessage(ref message);
         }
 
         public SampleTypeUrl GetTypeUrl(Allocator allocator)
