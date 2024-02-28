@@ -24,6 +24,16 @@ namespace ProtoBurst
         {
             return ComputeVarIntSize((ulong)value);
         }
+        
+        public static int ComputeUInt32Size(uint value)
+        {
+            return ComputeVarIntSize(value);
+        }
+
+        public static int ComputeUInt64Size(ulong value)
+        {
+            return ComputeVarIntSize(value);
+        }
 
         public static int ComputeVarIntSize(ulong value)
         {
